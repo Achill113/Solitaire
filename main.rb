@@ -1,12 +1,13 @@
 class Card
-  RANKS = [2,3,4,5,6,7,8,9,"J","Q","K","A"]
+  RANKS = [1,2,3,4,5,6,7,8,9,10,11,12]
   SUIT = {"S" => "Black","C" => "Black","D" => "Red","H" => "Red"}
-  attr_accessor :rank, :suit, :color
+  attr_accessor :rank, :suit, :color, :visible
 
   def initialize(id)
     self.rank = RANKS[(id % 13) - 1]
     self.suit = SUIT.keys[id % 4]
     self.color = SUIT[self.suit]
+    self.visible = false
   end
 end
 
@@ -20,83 +21,60 @@ class Deck
   end
 end
 
-d = Deck.new
-@deck = []
-d.cards.each{|card|
-  @deck << [card.rank, card.suit]
-}
+def build_deck
+  d = Deck.new
+  @deck = []
+  d.cards.each{|card|
+    @deck << [card.rank, card.suit, card.visible]
+  }
+end
+
+build_deck
 
 def setup
-  @s1 = {"Hidden" => [], "Visible" => []}
-  @s2 = {"Hidden" => [], "Visible" => []}
-  @s3 = {"Hidden" => [], "Visible" => []}
-  @s4 = {"Hidden" => [], "Visible" => []}
-  @s5 = {"Hidden" => [], "Visible" => []}
-  @s6 = {"Hidden" => [], "Visible" => []}
-  @s7 = {"Hidden" => [], "Visible" => []}
+  @stacks = []
   @next_card = []
 
-  @s1["Hidden"] = @deck.last
-  @deck.pop
-  @s2["Hidden"] = @deck.last(2)
-  @deck.pop(2)
-  @s3["Hidden"] = @deck.last(3)
-  @deck.pop(3)
-  @s4["Hidden"] = @deck.last(4)
-  @deck.pop(4)
-  @s5["Hidden"] = @deck.last(5)
-  @deck.pop(5)
-  @s6["Hidden"] = @deck.last(6)
-  @deck.pop(6)
-  @s7["Hidden"] = @deck.last(7)
-  @deck.pop(7)
-
-  @s1["Visible"] = @s1["Hidden"]
-  @s2["Visible"] = @s2["Hidden"].last
-  @s3["Visible"] = @s3["Hidden"].last
-  @s4["Visible"] = @s4["Hidden"].last
-  @s5["Visible"] = @s5["Hidden"].last
-  @s6["Visible"] = @s6["Hidden"].last
-  @s7["Visible"] = @s7["Hidden"].last
+  x = 1
+  for i in 0..6
+    @stacks[i] = move_from_deck @stacks[i], x
+    x += 1
+  end
 
   @a1 = []
   @a2 = []
   @a3 = []
   @a4 = []
 
-  puts "#{@s1["Visible"]} | #{@s2["Visible"]} | #{@s3["Visible"]} | #{@s4["Visible"]} | #{@s5["Visible"]} | #{@s6["Visible"]} | #{@s7["Visible"]}"
+  @stacks.each{|stack|
+    stack.last[2] = true
+  }
+
+  @stacks.each{|stack|
+    stack.each{|card|
+      if card.last
+        puts "#{card[0]}#{card[1]}"
+      end
+    }
+  }
+end
+
+def move_from_deck destination, x
+  destination = @deck.last(x)
+  @deck.pop(x)
 end
 
 setup
 
-def draw
-  @next_card = @deck.last
-  @deck.pop
-end
-
-def move(stack1, stack2)
-  s1num = stack1["Visible"][0] if stack1["Visible"][0].to_i
-  s1num = 1 if stack1["Visible"][0] == "A"
-  s1num = 10 if stack1["Visible"][0] == "J"
-  s1num = 11 if stack1["Visible"][0] == "Q"
-  s1num = 12 if stack1["Visible"][0] == "K"
-  s2num = stack2["Visible"][0] if stack2["Visible"][0].to_i
-  s2num = 1 if stack2["Visible"][0] == "A"
-  s2num = 10 if stack2["Visible"][0] == "J"
-  s2num = 11 if stack2["Visible"][0] == "Q"
-  s2num = 12 if stack2["Visible"][0] == "K"
-  if s1num == (s2num + 1)
-    puts stack1
-    puts stack2
-    stack2["Visible"].last << stack1["Visible"].last
-    stack1["Visible"].pop
-    stack1["Visible"] << stack1["Hidden"].last
-    puts stack1
-    puts stack2
+def move stack1, stack2, num
+  if stack1.last.last && stack2.last.last && stack1.last.first == (stack2.last.first + 1)
+    stack2 << stack1.last(num).flatten!
+    stack1.pop(num)
+    stack2.last[2] = true # Set card to visible
   else
-    puts "Illegal move"
+    puts "Invalid move"
   end
 end
 
-move(@s1, @s2)
-puts "#{@s1["Visible"]} | #{@s2["Visible"]} | #{@s3["Visible"]} | #{@s4["Visible"]} | #{@s5["Visible"]} | #{@s6["Visible"]} | #{@s7["Visible"]}"
+move @stacks[0], @stacks[3], 1
+puts @stacks
